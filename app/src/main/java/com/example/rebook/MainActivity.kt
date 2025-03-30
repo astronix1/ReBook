@@ -4,9 +4,11 @@ import android.R.attr.contentDescription
 import android.graphics.Color
 import android.graphics.drawable.shapes.Shape
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -32,24 +34,63 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImagePainter.State.Empty.painter
 import com.example.rebook.ui.theme.ReBookTheme
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import java.nio.file.WatchEvent
 
 class MainActivity : ComponentActivity() {
+    private lateinit var auth: FirebaseAuth
+    private lateinit var googleSignInClient: GoogleSignInClient
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        auth = FirebaseAuth.getInstance()
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(getString(R.string.default_web_client_id)) // From google-services.json
+            .requestEmail()
+            .build()
+        googleSignInClient = GoogleSignIn.getClient(this, gso)
+
         enableEdgeToEdge()
         setContent {
             ReBookTheme {
+//                val navController = rememberNavController()
+//                val auth = FirebaseAuth.getInstance()
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    LoginScreen(Modifier.padding(innerPadding))
+                    LoginScreen(Modifier.padding(innerPadding), ::signInWithGoogle)
                 }
             }
         }
     }
+    private val googleSignInLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            try {
+                val account = task.getResult(Exception::class.java)
+                val credential = GoogleAuthProvider.getCredential(account.idToken, null)
+                auth.signInWithCredential(credential)
+                    .addOnCompleteListener(this) { task ->
+                        if (task.isSuccessful) {
+                            Log.d("GoogleSignIn", "Success: ${auth.currentUser?.displayName}")
+                        } else {
+                            Log.e("GoogleSignIn", "Error: ${task.exception}")
+                        }
+                    }
+            } catch (e: Exception) {
+                Log.e("GoogleSignIn", "Sign-in failed", e)
+            }
+        }
+    private fun signInWithGoogle() {
+        val signInIntent = googleSignInClient.signInIntent
+        googleSignInLauncher.launch(signInIntent)
+    }
+
 }
 
 @Composable
-fun LoginScreen(modifier: Modifier = Modifier) {
+fun LoginScreen(modifier: Modifier = Modifier, signInWithGoogle: ()-> Unit) {
     var email by remember { mutableStateOf(TextFieldValue("")) }
     var password by remember { mutableStateOf(TextFieldValue("")) }
 
@@ -76,13 +117,15 @@ fun LoginScreen(modifier: Modifier = Modifier) {
                 )
             Image1()
             Spacer(modifier= Modifier.height(50.dp))
-            GoogleBtn()
+            GoogleBtn(signInWithGoogle)
 
 
         }
 
     }
 }
+
+
 @Composable
 fun Image1(){
     Box(modifier=Modifier.size(240.dp),
@@ -114,9 +157,10 @@ fun Image2(
 }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GoogleBtn(){
+fun GoogleBtn(signInWithGoogle: () -> Unit){
     var clicked by remember { mutableStateOf(false) }
-    Surface(onClick = { clicked = !clicked },
+    Surface(onClick = { clicked = true
+        signInWithGoogle()},
         shape= RoundedCornerShape(4.dp),
         border = BorderStroke(width = 1.dp, color = MaterialTheme.colorScheme.primary),
         color = MaterialTheme.colorScheme.surface
@@ -145,12 +189,12 @@ fun GoogleBtn(){
             Spacer(modifier = Modifier.width(8.dp))
             if(clicked){
                 Text(
-                    text = "Creating Account..."
+                    text = "Logging you in..."
                 )
             }
             else{
                 Text(
-                    text = "Sign Up with Google"
+                    text = "Continue with Google"
                 )
             }
             if(clicked){
@@ -161,6 +205,7 @@ fun GoogleBtn(){
                         .width(16.dp),
                     strokeWidth = 2.dp,
                     color = MaterialTheme.colorScheme.primary
+
                 )
             }
 
@@ -173,7 +218,7 @@ fun GoogleBtn(){
 
 fun LoginScreenPreview() {
     ReBookTheme {
-        LoginScreen()
+        LoginScreen(signInWithGoogle={})
 
     }
 }
