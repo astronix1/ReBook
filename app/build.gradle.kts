@@ -49,7 +49,6 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation("com.google.firebase:firebase-auth-ktx:22.1.2")  // Firebase Auth
     implementation("com.google.android.gms:play-services-auth:20.7.0") // Google Sign-In
-    implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("androidx.navigation:navigation-compose:2.7.7")
     implementation ("io.github.shashank02051997:FancyToast:2.0.2")
     implementation(libs.androidx.ui.graphics)

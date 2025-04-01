@@ -1,6 +1,8 @@
 package com.example.rebook
 
+
 import android.util.Log
+import android.util.Size
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
@@ -15,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -96,7 +99,7 @@ fun GoogleBtn(onClick: () -> Unit) {
         },
         shape = RoundedCornerShape(8.dp),
         border = BorderStroke(width = 1.dp, color = MaterialTheme.colorScheme.primary),
-        color = MaterialTheme.colorScheme.surface
+        color = colorResource(id = R.color.white),
     ) {
         Row(
             modifier = Modifier
@@ -116,7 +119,8 @@ fun GoogleBtn(onClick: () -> Unit) {
                 tint = null
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Text(text = if (clicked) "Logging you in..." else "Continue with Google")
+            Text(text = if (clicked) "Logging you in..." else "Continue with Google",
+                color = colorResource(id = R.color.black))
             if (clicked) {
                 Spacer(modifier = Modifier.width(16.dp))
                 CircularProgressIndicator(
